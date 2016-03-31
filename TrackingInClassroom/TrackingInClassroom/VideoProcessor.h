@@ -9,7 +9,7 @@ public:
 	//设置配置文件路径
 	virtual int setParams(const char * path);
 	//在画面中捕捉目标（人形）
-	std::vector<cv::Rect> getTargets(cv::Mat frame);
+	virtual std::vector<cv::Rect> getTargets(cv::Mat frame);
 private:
 };
 
