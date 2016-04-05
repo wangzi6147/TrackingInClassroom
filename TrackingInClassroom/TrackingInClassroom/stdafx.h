@@ -15,5 +15,7 @@
 // TODO:  在此处引用程序需要的其他头文件
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 #include <opencv2/legacy/legacy.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <vector>

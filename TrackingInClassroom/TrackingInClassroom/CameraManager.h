@@ -3,19 +3,19 @@
 class BaseManager
 {
 public:
-	BaseManager();
-	~BaseManager();
+	BaseManager(){}
+	~BaseManager(){}
 	//用于全景或跟踪摄像头的初始化
-	virtual int init();
+	virtual int init() = 0;
 	//获取一帧画面
-	virtual cv::Mat getOneFrame();
+	virtual cv::Mat getOneFrame() = 0;
 	//设置配置文件路径
-	virtual int setParams(const char * path);
+	virtual int setParams(const char * path) = 0;
 private:
 
 };
 
-class StaticCameraManager:BaseManager
+class StaticCameraManager:virtual public BaseManager
 {
 public:
 	StaticCameraManager();
@@ -27,7 +27,7 @@ private:
 
 };
 
-class TrackingCameraManager :BaseManager
+class TrackingCameraManager :virtual public BaseManager
 {
 public:
 	TrackingCameraManager();
