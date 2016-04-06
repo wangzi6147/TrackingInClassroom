@@ -111,7 +111,7 @@ BOOL CCameraDrive::Init(CMSComm* comm)
 	comm->SetInputMode(1);								// 二进制方式读写数据
 	comm->SetRThreshold(1);								// 当接收缓冲区中有n个以上字符时
 														// 引发OnComm事件
-	comm->SetSettings("9600, N, 8, 1");					// 波特率9600，无校验，8数据位，1停止位
+	comm->SetSettings(L"9600, N, 8, 1");					// 波特率9600，无校验，8数据位，1停止位
 
 	m_Comm = comm;
 	if(!comm->GetPortOpen() )  
@@ -127,7 +127,7 @@ BOOL CCameraDrive::Init(CMSComm* comm)
 	}
 	else
 	{
-		AfxMessageBox("cannot open serial port");
+		AfxMessageBox(L"cannot open serial port");
 		return FALSE;
 	}
 }
