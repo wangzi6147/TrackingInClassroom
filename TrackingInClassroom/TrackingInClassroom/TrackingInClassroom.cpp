@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 #include "VideoProcessor.h"
+#include "CameraDrive.h"
+#include "mscomm.h"
 
 using namespace cv;
 using namespace std;
@@ -39,6 +41,14 @@ int testVideoProcessor(const char * path){
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//主程序入口
+	CMSComm mycomm;
+	HWND my_hWnd;
+
+	CCameraDrive mycamera;
+	mycamera.SetFlagofInfo(1);
+	mycamera.Init(&mycomm);//这句会有问题！！！！！！！！！！！！！！！！！！！
+	mycamera.DownLeft(120, 10);
+
 
 	//videoprocess部分测试
 	const char * path = "../res/test.avi";
