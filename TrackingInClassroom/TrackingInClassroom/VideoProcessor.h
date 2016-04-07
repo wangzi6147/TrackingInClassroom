@@ -26,6 +26,17 @@ public:
 private:
 	//更新画面 为GMM等模型服务 类内部调用
 	int updateOneFrame(cv::Mat);
+
+	//GMM相关
+	cv::BackgroundSubtractor *pMOG2;
+	cv::Mat fgMaskMOG2;
+	int centerP = 2;
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::Rect r;
+	//HOG
+	cv::Mat ROI;
+	cv::HOGDescriptor hog; // 采用默认参数
 };
 
 class TrackingVideoProcessor:virtual public BaseProcessor

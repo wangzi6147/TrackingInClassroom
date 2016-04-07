@@ -41,13 +41,13 @@ int testVideoProcessor(const char * path){
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//主程序入口
-	CMSComm mycomm;
-	HWND my_hWnd;
+	//CMSComm mycomm;
+	//HWND my_hWnd;
 
-	CCameraDrive mycamera;
-	mycamera.SetFlagofInfo(1);
-	mycamera.Init(&mycomm);//这句会有问题！！！！！！！！！！！！！！！！！！！
-	mycamera.DownLeft(120, 10);
+	//CCameraDrive mycamera;
+	//mycamera.SetFlagofInfo(1);
+	//mycamera.Init(&mycomm);//这句会有问题！！！！！！！！！！！！！！！！！！！
+	//mycamera.DownLeft(120, 10);
 
 
 	//videoprocess部分测试
