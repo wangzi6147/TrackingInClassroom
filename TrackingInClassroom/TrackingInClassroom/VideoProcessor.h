@@ -26,6 +26,8 @@ public:
 private:
 	//更新画面 为GMM等模型服务 类内部调用
 	int updateOneFrame(cv::Mat);
+	//Haar检测
+	void detect_and_draw(IplImage* img);
 
 	//GMM相关
 	cv::BackgroundSubtractor *pMOG2;
@@ -37,6 +39,9 @@ private:
 	//HOG
 	cv::Mat ROI;
 	cv::HOGDescriptor hog; // 采用默认参数
+	//Haar
+	CvHaarClassifierCascade* cascade;
+	CvMemStorage* storage;
 };
 
 class TrackingVideoProcessor:virtual public BaseProcessor
