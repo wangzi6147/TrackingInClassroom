@@ -9,7 +9,13 @@ StaticVideoProcessor::StaticVideoProcessor(){
 }
 
 StaticVideoProcessor::~StaticVideoProcessor(){
-	
+	delete pMOG2;
+	if (cascade != NULL){
+		cvReleaseHaarClassifierCascade(&cascade);
+	}
+	if (storage != NULL){
+		cvReleaseMemStorage(&storage);
+	}
 }
 
 int StaticVideoProcessor::init(){
