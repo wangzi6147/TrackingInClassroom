@@ -3,7 +3,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-//#include "CommCTLPANTILT.h"
 #include "CameraDrive.h"
 
 #ifdef _DEBUG
@@ -111,7 +110,7 @@ BOOL CCameraDrive::Init(CMSComm* comm)
 	comm->SetInputMode(1);								// 二进制方式读写数据
 	comm->SetRThreshold(1);								// 当接收缓冲区中有n个以上字符时
 														// 引发OnComm事件
-	comm->SetSettings("9600, N, 8, 1");					// 波特率9600，无校验，8数据位，1停止位
+	comm->SetSettings(L"9600, N, 8, 1");					// 波特率9600，无校验，8数据位，1停止位
 
 	m_Comm = comm;
 	if(!comm->GetPortOpen() )  
@@ -127,7 +126,7 @@ BOOL CCameraDrive::Init(CMSComm* comm)
 	}
 	else
 	{
-		AfxMessageBox("cannot open serial port");
+		AfxMessageBox(L"cannot open serial port");
 		return FALSE;
 	}
 }
@@ -552,8 +551,8 @@ void CCameraDrive::RelativeRightTo(double posd, int speed)
 }
 void CCameraDrive::RelativeUpTo(int pos, int speed)
 {
-	//pos = (DWORD) (pos*2267/170);
-	pos = (DWORD) (pos*14.4);
+	//pos = (DWORD) (pos*1200/90);
+	pos = (DWORD)(pos*13.3);
 	speed = (BYTE) speed;
 	BYTE command[15] = {
 		0x81, 0x01, 0x06, 0x03, 
@@ -576,8 +575,8 @@ void CCameraDrive::RelativeUpTo(int pos, int speed)
 }
 void CCameraDrive::RelativeDownTo(int pos, int speed)
 {
-	//pos = (DWORD) (pos*2267/170);
-	pos = (DWORD) (pos*14.4);
+	//pos = (DWORD) (pos*1200/90);
+	pos = (DWORD)(pos*13.3);
 	speed = (BYTE) speed;
 	BYTE command[15] = {
 		0x81, 0x01, 0x06, 0x03, 
@@ -770,8 +769,8 @@ void CCameraDrive::DownRight(int panspeed, int  tiltspeed)
 }
 void CCameraDrive::UpTo(int pos, int speed)
 {
-	//pos = (DWORD) (pos*2267/170);
-	pos = (DWORD) (pos*334);
+	//pos = (DWORD) (pos*1200/90);
+	pos = (DWORD)(pos*13.3);
 	speed = (BYTE) speed;
 	BYTE command[15] = {
 		0x81, 0x01, 0x06, 0x02, 
@@ -795,8 +794,8 @@ void CCameraDrive::UpTo(int pos, int speed)
 
 void CCameraDrive::DownTo(int pos, int speed)
 {
-	//pos = (DWORD) (pos*2267/170);
-	pos = (DWORD) (pos*334);
+	//pos = (DWORD) (pos*1200/90);
+	pos = (DWORD) (pos*13.3);
 	speed = (BYTE) speed;
 	BYTE command[15] = {
 		0x81, 0x01, 0x06, 0x02, 
@@ -1215,4 +1214,36 @@ void CCameraDrive::AutoPowerOff(int min)
 	}
 	SendData(command, sizeof(command));
 	m_stateofCommand = "set time to power off";
+}
+
+void CCameraDrive::Absoluteto(int pos1, int pos2, int speed)
+{
+	//pos = (DWORD) (pos*2267/170);
+	pos1 = (DWORD)(pos1*14.4);
+	pos2 = (DWORD)(pos2 * 13.3);
+	speed = (BYTE)speed;
+	BYTE command[15] = {
+		0x81, 0x01, 0x06, 0x02,
+		0xFF,						// command[4] for pan-speed
+		0xFF,                       //command[5] for tilt-speed
+		0x0F, 0x0F, 0x0F, 0x0F,		// command[6-9] for the pan position
+		0x0F, 0x0F, 0x0F, 0x0F,     // command[10-13] for the tilt position
+		0xFF };
+
+	command[4] = speed;				// pan-speed
+	command[5] = speed;				// tilt-speed
+
+	for (int i = 9; i >= 6; i--)		// 给命令字赋值
+	{
+		command[i] &= pos1;
+		pos1 = pos1 >> 4;
+	}
+
+	for (int i = 13; i >= 10; i--)		// 给命令字赋值
+	{
+		command[i] &= pos2;
+		pos2 = pos2 >> 4;
+	}
+	m_stateofCommand = "Absolute to";
+	SendData(command, sizeof(command));
 }

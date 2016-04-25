@@ -82,6 +82,7 @@ public:
 	void Stop_Focus();
 	void Close();
 	BOOL Init(CMSComm* comm);
+	void Absoluteto(int pos1, int pos2, int speed);
 
 private:
 
