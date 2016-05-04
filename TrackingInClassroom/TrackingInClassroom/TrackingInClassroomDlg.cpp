@@ -12,6 +12,7 @@
 #include "videoInput.h"
 
 using namespace std;
+using namespace cv;
 #ifdef _EiC
 #define WIN32
 #endif
@@ -82,6 +83,42 @@ END_MESSAGE_MAP()
 
 // CTrackingInClassroomDlg 消息处理程序
 
+Rect rect_combine(vector<Rect> vec)
+{
+	Rect rec;
+	int minx = INT_MAX, miny = INT_MAX, maxw = 0, maxh = 0;
+	if (vec.size()>0)
+	{
+		for (int i = 0; i<vec.size(); i++)
+		{
+			if ((vec[i]).x<minx)
+			{
+				minx = (vec[i]).x;
+			}
+			if ((vec[i]).y<miny)
+			{
+				miny = (vec[i]).y;
+			}
+			if (((vec[i]).x+(vec[i]).width)>maxw)
+			{
+				maxw = ((vec[i]).x + (vec[i]).width);
+			}
+			if (((vec[i]).y + (vec[i]).height)>maxh)
+			{
+				maxh = ((vec[i]).y + (vec[i]).height);
+			}
+		}
+		rec.x=minx;
+		rec.y = miny;
+		rec.width = maxw-minx;
+		rec.height = maxh-miny;
+	}
+	return rec;
+}
+
+
+
+
 BOOL CTrackingInClassroomDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -119,7 +156,7 @@ BOOL CTrackingInClassroomDlg::OnInitDialog()
 		AfxMessageBox(L"Error!");
 	}
 	//从摄像头读取数据
-    VideoCapture cap(0);
+    VideoCapture cap(1);
 	cv::Mat frm;
 	if (!cap.isOpened())
     {
@@ -136,131 +173,188 @@ BOOL CTrackingInClassroomDlg::OnInitDialog()
 	}*/
 	pMOG2 = new BackgroundSubtractorMOG2(20,10,false);  //MOG2 approach;
 	videoInput vi;//创建视频捕获对象
-	vi.setupDevice(1);//配置设备
-	int width = vi.getWidth(1);
-	int height = vi.getHeight(1);
+	vi.setupDevice(0);//配置设备
+	int width = vi.getWidth(0);
+	int height = vi.getHeight(0);
 	IplImage *frame1 = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
 	//vi.showSettingsWindow(0);//该语句可以显示视频设置窗口，可以去掉
-	vi.setIdealFramerate(1, 60);
+	vi.setIdealFramerate(0, 60);
 	Sleep(4000);
 	//上半身检测
 	bool tracking = false;
 	while (1){
+		vector<Rect>  sv_vec, tv_vec;
+		int sv_size=0, tv_size=0;
+		double  angle_rl, angle_ud;
+		Rect sv_vec1, tv_vec1;
+		String str;
 		if (cap.read(frm)){
-			if (!tracking)
-			{
+			 sv_vec = Svp.getTargets(frm);
+			 sv_size = sv_vec.size();
+            //屏蔽区域显示
 				m_CameraDrive.Zoom(-5);
-				vector<Rect> vec = Svp.getTargets(frm);
 				for (int k = 0; k < Svp.ignore_area.size(); k++)
 				{
 					rectangle(frm, cv::Point(Svp.ignore_area[k].x, Svp.ignore_area[k].y), cv::Point(Svp.ignore_area[k].x + Svp.ignore_area[k].width, Svp.ignore_area[k].y + Svp.ignore_area[k].height), cv::Scalar(255, 0, 0), 2);
 				}
-				imshow("Hua", frm);
-				if (!vec.empty()){
-					for (int i = 0; i < vec.size(); i++)
-					{
-						if (vec[i].height*vec[i].width > 15)
-						{
-							double  angle_rl = Tvp.getrlangle(frm, vec);
-							double  angle_ud = Tvp.getudangle(frm, vec);
-							m_CameraDrive.Absoluteto(angle_rl, angle_ud, SPEED);
-							break;
-						}
-					}
 
-				}
-			}
-			else
-			{
-				for (int k = 0; k < Svp.ignore_area.size(); k++)
+				//计算特写摄像头转动角度
+				if (!sv_vec.empty())
 				{
-					rectangle(frm, cv::Point(Svp.ignore_area[k].x, Svp.ignore_area[k].y), cv::Point(Svp.ignore_area[k].x + Svp.ignore_area[k].width, Svp.ignore_area[k].y + Svp.ignore_area[k].height), cv::Scalar(255, 0, 0), 2);
+					Rect sv_vec1 = rect_combine(sv_vec);
+					angle_rl = Tvp.getrlangle(frm, sv_vec1);
+					angle_ud = Tvp.getudangle(frm, sv_vec1);
+					//rectangle(frm, sv_vec1,Scalar(0, 0, 255), 2);
+					rectangle(frm, cv::Point(sv_vec1.x, sv_vec1.y), cv::Point(sv_vec1.x + sv_vec1.width, sv_vec1.y + sv_vec1.height), cv::Scalar(0, 0, 255), 2);
 				}
 				imshow("Hua", frm);
 			}
-		}
-		if (vi.isFrameNew(1)){
-			vi.getPixels(1, (unsigned char*)frame1->imageData, false, true);
+		if (vi.isFrameNew(0)){
+			vi.getPixels(0, (unsigned char*)frame1->imageData, false, true);
 			if (frame1)
 			{
-				vector<Rect> v = Tvp.detect_and_draw(frame1);
-			
-				if (!v.empty())
-				{
-					Rect r = v[0];
-					double s = r.width*r.height;
-					double zoom_in = (*frame1).width*(*frame1).height*0.2;
-					double zoom_out = (*frame1).width*(*frame1).height*0.6;
-					tracking = true;
-					String str = Tvp.area_judge(frame1, v);
-					//cout << str << endl;
-					if (str.compare("DownRight") == 0){
-						m_CameraDrive.DownRight(SPEED);
-					}
-					else if (str.compare("Right") == 0)
-					{
-						m_CameraDrive.Right(SPEED);
+				 tv_vec = Tvp.detect_and_draw(frame1);
+				 tv_size = tv_vec.size();
 
-					}
-					else if (str.compare("UpRight") == 0)
-					{
-						m_CameraDrive.UpRight(SPEED);
-					}
-					else if (str.compare("Down") == 0)
-					{
-						m_CameraDrive.Down(SPEED);
-					}
-					else if (str.compare("Up") == 0)
-					{
-						m_CameraDrive.Up(SPEED);
-					}
-					else if (str.compare("DownLeft") == 0)
-					{
-						m_CameraDrive.DownLeft(SPEED);
-					}
-					else if (str.compare("Left") == 0)
-					{
-						m_CameraDrive.Left(SPEED);
-					}
-					else if (str.compare("UpLeft") == 0)
-					{
-						m_CameraDrive.UpLeft(SPEED);
-					}
-					else
-					{
-						m_CameraDrive.Stop();
-						if (zoom_flag&&s<zoom_in)
-						{
-							m_CameraDrive.Zoom(2);
-						}
-						else if (zoom_flag&&s>zoom_out)
-						{
-							m_CameraDrive.Zoom(-2);
-					    }
-						else
-						{
-							m_CameraDrive.Stop_Zoom();
-						}
-					}
+				if (!tv_vec.empty())
+				{
+					Rect tv_vec1 = rect_combine(tv_vec);
+					str = Tvp.area_judge(frame1, tv_vec1);
+				}
+			}
+		}
+		if (tv_size<sv_size)
+		{
+			m_CameraDrive.Absoluteto(angle_rl, angle_ud, SPEED);
+		}
+		else if (tv_size > sv_size)
+		{
+			if (tv_size == 1 && sv_size == 0)
+			{
+				double s = tv_vec1.width*tv_vec1.height;
+				double zoom_in = (*frame1).width*(*frame1).height*0.2;
+				double zoom_out = (*frame1).width*(*frame1).height*0.6;
+				//cout << str << endl;
+				if (str.compare("DownRight") == 0){
+					m_CameraDrive.DownRight(SPEED);
+				}
+				else if (str.compare("Right") == 0)
+				{
+					m_CameraDrive.Right(SPEED);
+
+				}
+				else if (str.compare("UpRight") == 0)
+				{
+					m_CameraDrive.UpRight(SPEED);
+				}
+				else if (str.compare("Down") == 0)
+				{
+					m_CameraDrive.Down(SPEED);
+				}
+				else if (str.compare("Up") == 0)
+				{
+					m_CameraDrive.Up(SPEED);
+				}
+				else if (str.compare("DownLeft") == 0)
+				{
+					m_CameraDrive.DownLeft(SPEED);
+				}
+				else if (str.compare("Left") == 0)
+				{
+					m_CameraDrive.Left(SPEED);
+				}
+				else if (str.compare("UpLeft") == 0)
+				{
+					m_CameraDrive.UpLeft(SPEED);
 				}
 				else
 				{
-					tracking = false;
 					m_CameraDrive.Stop();
+					if (zoom_flag&&s < zoom_in)
+					{
+						m_CameraDrive.Zoom(2);
+					}
+					else if (zoom_flag&&s > zoom_out)
+					{
+						m_CameraDrive.Zoom(-2);
+					}
+					else
+					{
+						m_CameraDrive.Stop_Zoom();
+					}
 				}
+			}
+			else if (tv_size>1)
+			{
+				if (sv_size>0)
+				{
+					m_CameraDrive.Absoluteto(angle_rl, angle_ud, SPEED);
+				}
+				
+			}
+		}
+		else if (tv_size==sv_size) 
+		{
+			double s = tv_vec1.width*tv_vec1.height;
+			double zoom_in = (*frame1).width*(*frame1).height*0.2;
+			double zoom_out = (*frame1).width*(*frame1).height*0.6;
+			//cout << str << endl;
+			if (str.compare("DownRight") == 0){
+				m_CameraDrive.DownRight(SPEED);
+			}
+			else if (str.compare("Right") == 0)
+			{
+				m_CameraDrive.Right(SPEED);
+
+			}
+			else if (str.compare("UpRight") == 0)
+			{
+				m_CameraDrive.UpRight(SPEED);
+			}
+			else if (str.compare("Down") == 0)
+			{
+				m_CameraDrive.Down(SPEED);
+			}
+			else if (str.compare("Up") == 0)
+			{
+				m_CameraDrive.Up(SPEED);
+			}
+			else if (str.compare("DownLeft") == 0)
+			{
+				m_CameraDrive.DownLeft(SPEED);
+			}
+			else if (str.compare("Left") == 0)
+			{
+				m_CameraDrive.Left(SPEED);
+			}
+			else if (str.compare("UpLeft") == 0)
+			{
+				m_CameraDrive.UpLeft(SPEED);
+			}
+			else
+			{
+				m_CameraDrive.Stop();
+				if (zoom_flag&&s < zoom_in)
+				{
+					m_CameraDrive.Zoom(2);
+				}
+				else if (zoom_flag&&s > zoom_out)
+				{
+					m_CameraDrive.Zoom(-2);
+				}
+				else
+				{
+					m_CameraDrive.Stop_Zoom();
+				}
+			}
+		}
+				
 				char c = cvWaitKey(1);
 				if (c == 27) break;//按ESC退出
 				cvNamedWindow("hei", CV_WINDOW_AUTOSIZE);
 				cvShowImage("hei", frame1);
 			}
-			//char c = cvWaitKey(1);
-		 //   if (c == 27) break;//按ESC退出
-			//cvNamedWindow("Video", CV_WINDOW_AUTOSIZE);
-			//cvShowImage("Video", frame1);
-		}
-	}
 	cvReleaseImage(&frame1);
-
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 

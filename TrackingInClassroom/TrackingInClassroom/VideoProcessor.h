@@ -14,7 +14,6 @@ public:
 	//在画面中捕捉目标（人形）
 	virtual std::vector<cv::Rect> getTargets(cv::Mat frame) = 0;
 	//CCameraDrive&	m_CameraDrive;
-	
 private:
 };
 
@@ -55,12 +54,13 @@ public:
 	//目的是为了增加追踪的准确性
 	//我们之前的思路是StaticCamera去修正TrackingCamera
 	//现在考虑是否反过来 用TrackingCamera修正StaticCamera的结果
-	double getrlangle(Mat frame,vector<Rect> v);
-	double getudangle(Mat frame,vector<Rect> v);
+	double getrlangle(Mat frame, Rect r);
+	double getudangle(Mat frame, Rect r);
 	bool detect_upperbody(IplImage* frame);
 	vector<Rect> detect_and_draw(IplImage* img);
-	String area_judge(IplImage* frame, vector<Rect> v);
+	String area_judge(IplImage* frame,Rect v);
 	const char* cascade_name = "./haarcascade_mcs_upperbody.xml";
+	//const char* cascade_name = "./haarcascade_frontalface_alt.xml";
 private:
 	int rect_center_x = 0, rect_center_y = 0, rect_x = 0, rect_y = 0,center_frame_width = 0, center_frame_height = 0;
 	double tilt_angle_ud = 0, tilt_angle_rl = 0;

@@ -102,7 +102,7 @@ vector<Rect> StaticVideoProcessor::getTargets(Mat frame){
 	static CvScalar colors[] =
 	{
 		{ { 0, 0, 255 } },
-		{ { 0, 128, 255 } },
+		{ { 0, 128, 255 } }, 
 		{ { 0, 255, 255 } },
 		{ { 0, 255, 0 } },
 		{ { 255, 128, 0 } },
@@ -138,7 +138,7 @@ vector<Rect> StaticVideoProcessor::getTargets(Mat frame){
 
 	/*ÌáÈ¡ÂÖÀª*/
 	CvMemStorage* mem_storage = cvCreateMemStorage(0);
-	CvSeq *first_contour = NULL, *c = NULL;
+	//CvSeq *first_contour = NULL, *c = NULL;
 	imwrite("contour.jpg", fgMaskMOG2);
 	cvNamedWindow("contour_test");
 	cvNamedWindow("contour_raw");
@@ -184,6 +184,9 @@ vector<Rect> StaticVideoProcessor::getTargets(Mat frame){
 		}
 	}
 	//return regions;
+	cvReleaseImage(&img_temp);
+	cvReleaseImage(&img);
+	cvReleaseMemStorage(&mem_storage);
 	return v;
 }
 	
@@ -230,9 +233,11 @@ void StaticVideoProcessor::humanDetect(IplImage* img, vector<Rect>& regions)
 			//center.y = cvRound((r->y + r->height*0.5)*scale);
 			//radius = cvRound((r->width + r->height)*0.25*scale);
 			//cvCircle(img, center, radius, colors[i % 8], 3, 8, 0);
-			cvRectangle(img, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), colors[0]);
+            cvRectangle(img, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), colors[0]);
 		}
 	}
 	cvReleaseImage(&gray);
 	cvReleaseImage(&small_img);
+	cvReleaseMemStorage(&storage);
+	cvReleaseHaarClassifierCascade(&cascade);
 }

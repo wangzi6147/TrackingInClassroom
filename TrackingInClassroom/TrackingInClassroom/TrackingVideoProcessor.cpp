@@ -52,34 +52,34 @@ std::vector<cv::Rect> TrackingVideoProcessor::getTargets(Mat frame){
 	return v;
 }
 
-double TrackingVideoProcessor::getrlangle(Mat frame,vector<Rect> v){
+double TrackingVideoProcessor::getrlangle(Mat frame,Rect r){
 	center_frame_width = frame.cols / 2;
 	center_frame_height = frame.rows / 2;
 	//vector<Rect>::iterator it;
 	//for (it = v.begin(); it != v.end(); it++){
-	if (v.size()>0){
-		rect_center_x = (v[0]).x + (v[0]).width / 2;
+	//if (r){
+		rect_center_x = r.x + r.width / 2;
 		rect_x = rect_center_x - center_frame_width;
 		double camera_d = center_frame_width / n;
 		tilt_angle_rl = atan2(rect_x, camera_d)*(180 / CV_PI);
-	}
+	//}
 	cout << "rl:"<<tilt_angle_rl <<endl;
 	//}
 	return tilt_angle_rl;
 }
 
-double TrackingVideoProcessor::getudangle(Mat frame,vector<Rect> v){
+double TrackingVideoProcessor::getudangle(Mat frame, Rect r){
 	center_frame_width = frame.cols / 2;
-	center_frame_height = frame.rows / 4;
-	if (v.size() > 0){
-		rect_center_y = (v[0]).y + (v[0]).height / 2;
+	center_frame_height = frame.rows / 2;
+//	if (r.size> 0){
+		rect_center_y = r.y + r.height / 4;
 		rect_y = center_frame_height - rect_center_y;
 		double camera_d = center_frame_width / n;
 		tilt_angle_ud = atan2(rect_y, camera_d)*(180 / CV_PI);
-		if (tilt_angle_ud < 0){
-			tilt_angle_ud = 0;
+		if (tilt_angle_ud < 10){
+			tilt_angle_ud = 10;
 		}
-	}
+	//}
 	//cout <<"ud:"<< tilt_angle_ud << endl;
 	return tilt_angle_ud;
 }
@@ -135,10 +135,11 @@ vector<Rect> TrackingVideoProcessor::detect_and_draw(IplImage* img)
 		CvSeq* upperbodies = cvHaarDetectObjects(small_img, cascade, storage, 1.1, 2, 0, cvSize(200, 200));
 		t = (double)cvGetTickCount() - t;
 		//printf( "detection time = %gms\n", t/((double)cvGetTickFrequency()*1000.) );
-		//for (i = 0; i < (upperbodies ? upperbodies->total : 0); i++)
-		//{
-		if (upperbodies){
-			CvRect* r = (CvRect*)cvGetSeqElem(upperbodies,0);
+		for (i = 0; i < (upperbodies ? upperbodies->total : 0); i++)
+		{
+	//	if (upperbodies){
+			//CvRect* r = (CvRect*)cvGetSeqElem(upperbodies,0);
+			CvRect* r = (CvRect*)cvGetSeqElem(upperbodies, i);
 			int radius;
 			if (r){
 				center.x = cvRound((r->x + r->width*0.5)*scale);
@@ -147,21 +148,20 @@ vector<Rect> TrackingVideoProcessor::detect_and_draw(IplImage* img)
 				cvCircle(img, center, radius, colors[0 % 8], 3, 8, 0);
 				cvRectangle(img, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), colors[0]);
 				v.push_back(*r);
-			}
-		
+				}
 		}
-			
-		//}
 	}
 	//cvNamedWindow("Video", 0);
 	//cvResizeWindow("Video", WIDTH, HEIGHT);
 	//cvShowImage("Video", img);
 	cvReleaseImage(&gray);
 	cvReleaseImage(&small_img);
+	cvReleaseMemStorage(&storage);
+	cvReleaseHaarClassifierCascade(&cascade);
 	return v;
 }
 
-String TrackingVideoProcessor::area_judge(IplImage* frame,vector<Rect> v){
+String TrackingVideoProcessor::area_judge(IplImage* frame,Rect v){
 	String str;
 	Mat mtr;
 	mtr = frame;
@@ -169,12 +169,12 @@ String TrackingVideoProcessor::area_judge(IplImage* frame,vector<Rect> v){
 	int frame_height = mtr.rows;
 	int blob_width = frame_width / 3;
 	int blob_height = frame_height / 3;
-	if (!v.empty())
-	{
-		int center_x = (v[0]).x + (v[0]).width / 2;
-		int center_y = (v[0]).y + (v[0]).height / 2;
-		if (v.size() > 0)
-		{
+	//if (!v.empty())
+	//{
+		int center_x = v.x + v.width / 2;
+		int center_y = v.y + v.height / 2;
+	//	if (v.size() > 0)
+	//	{
 			if (0 < center_x && center_x < blob_width)
 			{
 				if (0 < center_y && center_y < blob_height)
@@ -219,8 +219,8 @@ String TrackingVideoProcessor::area_judge(IplImage* frame,vector<Rect> v){
 				{
 					str = "DownRight";
 				}
-			}
-		}
+			//}
+		//}
 	}
 	return str;
 }
